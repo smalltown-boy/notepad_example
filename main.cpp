@@ -15,6 +15,8 @@ const char *edit_menu[] = {"Cut", "Copy", "Paste", NULL};
 
 WINDOW *edit_win = nullptr;
 
+string filename;
+
 
 void show_about();
 void show_submenu(const char** items, const char* title);
@@ -54,7 +56,7 @@ void show_about()
     refresh();
     //
     draw_header();     
-    draw_workspace("Untitled.txt");  
+    draw_workspace(filename);  
 }
 
 WINDOW* draw_menu_window(const char* title, int height, int width) 
@@ -141,14 +143,12 @@ void show_submenu(const char** items, const char* title)
     refresh();
     
     draw_header();     
-    draw_workspace("Untitled.txt");  
+    draw_workspace(filename);  
 }
 
 //Точка входа в программу
 int main(int argc, char *argv[])
 {
-    string filename;
-    
     if(argc == 2)                                    
     {
         filename = argv[1];                          

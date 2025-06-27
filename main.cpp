@@ -15,10 +15,13 @@ const char *edit_menu[] = {"Cut", "Copy", "Paste", NULL};
 
 WINDOW *edit_win = nullptr;
 
-void draw_header();
+
 void show_about();
+void show_submenu(const char** items, const char* title);
+
 WINDOW* draw_menu_window(const char* title, int height, int width);
 void draw_workspace(string name);
+void draw_header();
 
 //Реализация функций
 void draw_header() 
@@ -89,6 +92,58 @@ WINDOW* draw_menu_window(const char* title, int height, int width)
     wrefresh(edit_win);
 }
 
+void show_submenu(const char** items, const char* title) 
+{
+    int count = 0;
+    while (items[count]) count++;
+
+    int width = 20;
+    int height = count + 4;
+
+    WINDOW* menu_win = draw_menu_window(title, height, width);
+
+    int choice = 0;
+    int ch;
+    keypad(menu_win, TRUE);
+
+    while (1) 
+    {
+        for (int i = 0; i < count; ++i) 
+        {
+            if (i == choice) 
+            {
+                wattron(menu_win, COLOR_PAIR(COLOR_HIGHLIGHT));
+                mvwprintw(menu_win, i + 2, 2, "%s", items[i]);
+                wattroff(menu_win, COLOR_PAIR(COLOR_HIGHLIGHT));
+            } 
+            else 
+            {
+                mvwprintw(menu_win, i + 2, 2, "%s", items[i]);
+            }
+        }
+        wrefresh(menu_win);
+
+        ch = wgetch(menu_win);
+        if (ch == 27)  // ESC
+            break;
+        else if (ch == KEY_UP)
+            choice = (choice + count - 1) % count;
+        else if (ch == KEY_DOWN)
+            choice = (choice + 1) % count;
+        else if (ch == '\n') 
+        {
+            break;
+        }
+    }
+
+    delwin(menu_win);
+    touchwin(stdscr);
+    refresh();
+    
+    draw_header();     
+    draw_workspace("Untitled.txt");  
+}
+
 //Точка входа в программу
 int main(int argc, char *argv[])
 {
@@ -141,6 +196,14 @@ int main(int argc, char *argv[])
     {
         switch(ch)
         {
+            case KEY_F(1):
+                show_submenu(file_menu, "File");
+            break;
+            
+            case KEY_F(2):
+                show_submenu(edit_menu, "Edit");
+            break;
+            
             case KEY_F(3):
                 show_about(); 
             break;

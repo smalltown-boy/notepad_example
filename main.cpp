@@ -143,7 +143,8 @@ void show_submenu(const char** items, const char* title)
     refresh();
     
     draw_header();     
-    draw_workspace(filename);  
+    draw_workspace(filename); 
+    curs_set(1); 
 }
 
 //Точка входа в программу
@@ -176,7 +177,6 @@ int main(int argc, char *argv[])
     noecho();
     cbreak();
     keypad(stdscr, TRUE);
-    curs_set(0);
     
     if (has_colors()) 
     {
@@ -189,6 +189,8 @@ int main(int argc, char *argv[])
     
     draw_header();
     draw_workspace(filename);
+    wmove(edit_win, 2, 2);
+    refresh();
     
     int ch;
     
@@ -207,14 +209,22 @@ int main(int argc, char *argv[])
             case KEY_F(3):
                 show_about(); 
             break;
+            
+            default:
+                waddch(edit_win, ch);
+                wrefresh(edit_win);
+            break;
         }
     }
     
     //draw_header();
     //draw_workspace(filename);
     
+    /*
     if (edit_win)
         delwin(edit_win);
     endwin();
+     * */
+    
     return 0;
 }

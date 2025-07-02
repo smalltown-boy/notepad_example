@@ -3,8 +3,10 @@
 #include <iostream>
 #include <fstream>
 
-using namespace std;
+#include <vector>
+#include <filesystem>
 
+using namespace std;
 
 #define COLOR_HEADER 1
 #define COLOR_MENU 4
@@ -38,12 +40,69 @@ void (*function_array_file[])() = { file_new, file_open, file_save };
 //Реализация функций
 void file_new(void)
 {
-    asm("nop");
+    const char* message = "Do you want to create a new file? The current one will be closed. [y/n]";
+    int width = strlen(message) + 6;
+    int height = 5;
+    int key = 0;
+
+    char filename[256];
+
+    WINDOW* win_new = draw_menu_window("New", height, width);
+    mvwprintw(win_new, 2, 3, "%s", message);
+    wrefresh(win_new);
+
+    // Ожидаем ввод 'y' или 'n'
+    while(key != 'y' && key != 'n')
+    {
+        key = wgetch(win_new);
+    }
+
+    if(key == 'y')
+    {
+        outfile.close(); // Предполагаем, что это std::ofstream или FILE*
+
+        delwin(win_new);
+        touchwin(stdscr);
+        refresh();
+        draw_header();
+
+        WINDOW* win_enter = draw_menu_window("New", height + 2, width + 10);
+        mvwprintw(win_enter, 2, 3, "Enter file name and press [Enter]: ");
+        wrefresh(win_enter);
+        curs_set(1);
+
+        echo(); // Включаем отображение введённых символов
+        mvwgetnstr(win_enter, 3, 3, filename, sizeof(filename) - 1);
+        noecho(); // Выключаем обратно
+
+        curs_set(0); // Скрываем курсор
+
+        // Выводим введённое имя
+        werase(win_enter);
+        box(win_enter, 0, 0);
+        mvwprintw(win_enter, 2, 3, "File name: %s", filename);
+        wrefresh(win_enter);
+
+        // Можно использовать имя файла, например:
+        outfile.open(filename);
+        
+        delwin(win_enter);
+        touchwin(stdscr);
+        refresh();
+        draw_header();
+    }
+    else
+    {
+        delwin(win_new);
+        touchwin(stdscr);
+        refresh();
+        draw_header();
+    }
 }
 
 void file_open(void)
 {
-    
+
 }
 
 void file_save(void)
@@ -65,6 +124,7 @@ void file_save(void)
     if(key == 121)
     {
         outfile.close();
+        outfile.open(filename);
     }
     
     delwin(win_save);

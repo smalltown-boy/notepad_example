@@ -7,9 +7,9 @@ using namespace std;
 
 
 #define COLOR_HEADER 1
-#define COLOR_MENU 3
+#define COLOR_MENU 4
 #define COLOR_WINDOW 2
-#define COLOR_HIGHLIGHT 4
+#define COLOR_HIGHLIGHT 3
 
 
 const char *file_menu[] = {"New", "Open", "Save", NULL};
@@ -17,17 +17,62 @@ const char *edit_menu[] = {"Cut", "Copy", "Paste", NULL};
 
 WINDOW *edit_win = nullptr;
 
+ofstream outfile;
 string filename;
 
 //Прототипы функций
 void show_about(void);
 int show_exit(void);
-void show_submenu(const char** items, const char* title);
+void show_submenu(const char** items, const char* title, void (*funcs[])());
+
 WINDOW* draw_menu_window(const char* title, int height, int width);
 void draw_workspace(string name);
 void draw_header(void);
 
+void file_new(void);
+void file_open(void);
+void file_save(void);
+
+void (*function_array_file[])() = { file_new, file_open, file_save };
+
 //Реализация функций
+void file_new(void)
+{
+    asm("nop");
+}
+
+void file_open(void)
+{
+    
+}
+
+void file_save(void)
+{
+    const char* message = "Save this file [y/n]";
+    int width = strlen(message) + 6;
+    int height = 5;
+    int key = 0;
+    
+    WINDOW* win_save = draw_menu_window("Save", height, width);
+    mvwprintw(win_save, 2, 3, "%s", message);
+    wrefresh(win_save);
+    
+    while(key != 121 && key != 110)
+    {
+        key = wgetch(win_save);
+    }
+    
+    if(key == 121)
+    {
+        outfile.close();
+    }
+    
+    delwin(win_save);
+    touchwin(stdscr);
+    refresh();
+    draw_header();
+}
+
 void draw_header(void) 
 {
     attron(COLOR_PAIR(COLOR_HEADER));
@@ -81,7 +126,7 @@ void show_about(void)
     touchwin(stdscr);
     refresh();
     draw_header();     
-    draw_workspace(filename);  
+    //draw_workspace(filename);  
 }
 
 WINDOW* draw_menu_window(const char* title, int height, int width) 
@@ -119,7 +164,7 @@ void draw_workspace(string name)
     wrefresh(edit_win);
 }
 
-void show_submenu(const char** items, const char* title) 
+void show_submenu(const char** items, const char* title, void (*funcs[])()) 
 {
     int count = 0;
     while (items[count]) count++;
@@ -130,7 +175,7 @@ void show_submenu(const char** items, const char* title)
     WINDOW* menu_win = draw_menu_window(title, height, width);
 
     int choice = 0;
-    int ch;
+    int key;
     keypad(menu_win, TRUE);
 
     while (1) 
@@ -150,38 +195,48 @@ void show_submenu(const char** items, const char* title)
         }
         wrefresh(menu_win);
 
-        ch = wgetch(menu_win);
-        if (ch == 27)  // ESC
+        key = wgetch(menu_win);
+        if (key == 27)  // ESC
             break;
-        else if (ch == KEY_UP)
+        else if (key == KEY_UP)
             choice = (choice + count - 1) % count;
-        else if (ch == KEY_DOWN)
+        else if (key == KEY_DOWN)
             choice = (choice + 1) % count;
-        else if (ch == '\n') 
+        else if (key == '\n') 
         {
+            delwin(menu_win);
+            touchwin(stdscr);
+            refresh();
+            draw_header(); 
+            
             switch(choice)
             {
                 case 0:
+                    funcs[choice]();
                 break;
                 
                 case 1:
+                    funcs[choice]();
                 break;
                 
                 case 2:
+                    funcs[choice]();
                 break;
                 
                 default:
                 break;
             }
+            draw_header(); 
+            refresh();
+            return;
         }
     }
 
     delwin(menu_win);
     touchwin(stdscr);
     refresh();
-    
     draw_header();     
-    draw_workspace(filename); 
+    //draw_workspace(filename); 
     curs_set(1); 
 }
  
@@ -200,7 +255,7 @@ int main(int argc, char *argv[])
             filename += ".txt";                             
         }
         
-        ofstream outfile(filename);                         
+        outfile.open(filename);                         
         
         if(!outfile)                                       
         {
@@ -211,7 +266,7 @@ int main(int argc, char *argv[])
     else
     {
         filename = "Untitled.txt";
-        cerr << "Error: the argument was not passed!" << filename << "\n";    
+        outfile.open(filename);
     }
     
     initscr();
@@ -229,10 +284,9 @@ int main(int argc, char *argv[])
     }
     
     draw_header();
-    
-    draw_workspace(filename);
-    wmove(edit_win, 2, 2);
-    //curs_set(1);
+    //draw_workspace(filename);
+    curs_set(1);
+    wmove(edit_win, 3, 3);
     refresh();
     
     
@@ -243,11 +297,11 @@ int main(int argc, char *argv[])
         switch(key)
         {
             case KEY_F(1):
-                show_submenu(file_menu, "File");
+                show_submenu(file_menu, "File", function_array_file);
             break;
             
             case KEY_F(2):
-                show_submenu(edit_menu, "Edit");
+                show_submenu(edit_menu, "Edit", function_array_file);
             break;
             
             case KEY_F(3):
@@ -262,7 +316,7 @@ int main(int argc, char *argv[])
             break;
             
             default:
-                draw_workspace(filename); 
+                //draw_workspace(filename); 
                 waddch(edit_win, key);
                 wrefresh(edit_win);
             break;
